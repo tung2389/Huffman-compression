@@ -107,7 +107,7 @@ MinHeap<KeyType>& MinHeap<KeyType>::operator=(const MinHeap<KeyType>& heap)
 
 /*==========================================================
 heapify(int index);          // heapify subheap rooted at index
-Precondition: Must be given an index. Used on an array
+Precondition: The subtrees are valid heaps. 
 Postcondition: The min heap property is maintained by calling the heapifyR
 ============================================================*/
 template <class KeyType>
@@ -119,7 +119,7 @@ void MinHeap<KeyType>::heapify(int index)
 
 /*==========================================================
 heapifyR(int index);          // heapify subheap rooted at index
-Precondition: Must be given an index. Used on an array
+Precondition: The subtrees are valid heaps. 
 Postcondition: The min heap property is maintained by recursively calling heapifyR
 ============================================================*/
 template <class KeyType>
@@ -148,7 +148,7 @@ void MinHeap<KeyType>::heapifyR(int index)
 
 /*==========================================================
 heapify(int index);          // heapify subheap rooted at index
-Precondition: Must be given an index. Used on an array
+Precondition: The subtrees are valid heaps. 
 Postcondition: The min heap property is maintained by iteratively heapifying
 ============================================================*/
 template <class KeyType>
