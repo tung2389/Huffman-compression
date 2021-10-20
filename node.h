@@ -24,9 +24,9 @@ class Node {
         }
 
         bool operator < (Node other) {
-            return (this->data < other.data);
+            return (this->freq < other.freq);
         } 
-}
+};
 
 ostream& operator<<(ostream& out, const Node& Node) {
 	out << node.toString();
