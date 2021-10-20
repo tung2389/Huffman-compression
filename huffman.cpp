@@ -8,7 +8,6 @@ using namespace std;
 /*
 Read the entire content of the file into the string data of Huffman class.
 */
-
 void Huffman::readFile() {
     ifstream inputFile(source);
     if(inputFile.is_open()) {
@@ -100,25 +99,32 @@ void Huffman::writeHeaderToFile() {
 /*
 Write prefix codes corresponding to characters from source file to the destinaton file in bits.
 */
-// void Huffman::writePrefixCodesToFile() {
-//     int curBit = 0;
-//     char byte = 0;
-//     string encodedData = "";
-//     for(char c: data) {
-//         string code = charToCode[c];
-//         encodedData += code;
-//     }
+void Huffman::writePrefixCodesToFile() {
+    int curBit = 0;
+    unsigned char byte = 0;
+    string encodedData = "";
 
-//     for(char bit: encodedData) {
-//         if(bit == '1') {
-//             byte = byte | (1 << (8 - curBit - 1));
-//         }
-//         curBit++;
-//         if(curBit == 8) {
+    for(char c: data) {
+        string code = charToCode[c];
+        encodedData += code;
+    }
 
-//         }
-//     }
-// }
+    ofstream outputFile(dest, ios::app);
+
+    for(char bit: encodedData) {
+        if(bit == '1') {
+            byte = byte | (1 << (8 - curBit - 1));
+        }
+        curBit++;
+        if(curBit == 8) {
+            curBit = 0;
+            outputFile << byte;
+        }
+    }
+
+    outputFile.flush();
+    outputFile.close();
+}
 
 void Huffman::compress() {
     readFile();
@@ -127,7 +133,7 @@ void Huffman::compress() {
     buildCharToCode(root, "");
 
     writeHeaderToFile();
-    // writePrefixCodesToFile();
+    writePrefixCodesToFile();
 }
 
 void decompress() {
