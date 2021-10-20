@@ -2,31 +2,47 @@
 #include<vector>
 #include<fstream>
 #include<unordered_map>
-#include"pq.h"
-#include"node.h"
+#include"huffman.h"
 using namespace std;
 
-char pseudoEOF = '\0';
+/*
+Read the entire content of the file into the string data of Huffman class.
+*/
 
-// Build a frequency dictionary of all characters in srcFile that maps each character to its frequency
-void buildFrequencyDict(string srcFile, unordered_map<char, unsigned int>& charFreq) {
-    ifstream inputFile(srcFile);
+void Huffman::readFile() {
+    ifstream inputFile(source);
     if(inputFile.is_open()) {
-        char c;
-        while(inputFile.get(c)) {
-            // c hasn't been found in map (or dictionary)
-            if(charFreq.find(c) == charFreq.end()) {
-                charFreq[c] = 0;
-            }
-            charFreq[c]++;
-        }
-
-        charFreq[pseudoEOF] = 1;
+        stringstream ss;
+        ss << inputFile.rdbuf();
+        data = ss.str();
         inputFile.close();
     }
+}
+
+/*
+Build a frequency dictionary of all characters in the source file that maps each character to its frequency
+*/
+void Huffman::buildFrequencyDict() {
+    for(char c : data) {
+        // c hasn't been found in map (or dictionary)
+        if(charFreq.find(c) == charFreq.end()) {
+            charFreq[c] = 0;
+        }
+        charFreq[c]++;
+    }
+    charFreq[pseudoEOF] = 1;
 }   
 
-Node * huffman(const vector<Node *>& nodes) {
+/*
+Build a huffman tree of all characters in the source file.
+*/
+void Huffman::buildHuffmanTree() {
+    // nodes is the list of Node instances of all characters in the source file
+    vector<Node *> nodes;
+    for(auto it = charFreq.begin(); it != charFreq.end(); it++) {
+        nodes.push_back(new Node(it->first, it->second));
+    }
+
     MinPriorityQueue<Node> pq;
     for(Node *node : nodes) {
         pq.insert(node);
@@ -42,19 +58,21 @@ Node * huffman(const vector<Node *>& nodes) {
         pq.insert(newNode);
     }
 
-    return pq.extractMin();
+    this->root = pq.extractMin();
 }
 
-// Build a dictionary that maps a character to its prefix code in the huffman tree.
-void buildCharToCode(Node *node, string code, unordered_map<char, string>& charToCode) {
+/*
+Build a dictionary that maps each character to its prefix code in the huffman tree.
+*/
+void Huffman::buildCharToCode(Node *node, string code) {
     // This is a leaf
     if(node->left == nullptr && node->right == nullptr) {
         charToCode[node->data] = code;
     }
     // Since huffman tree is a full binary tree, we always have valid left and right pointer
     else {
-        buildCharToCode(node->left, code + "0", charToCode);
-        buildCharToCode(node->right, code + "1", charToCode);
+        buildCharToCode(node->left, code + "0");
+        buildCharToCode(node->right, code + "1");
     }   
 }
 
@@ -63,8 +81,8 @@ Write the header containing frequency dictionary of all characters, which map ea
 to the compresed file. The header is written to the file in normal ASCII characters, because its size is neligible 
 comparing to the amount of saving by compressing the file content.
 */
-void writeHeader(string destFile, const unordered_map<char, unsigned int>& charFreq) {
-    ofstream outputFile(destFile);
+void Huffman::writeHeaderToFile() {
+    ofstream outputFile(dest);
     if(outputFile.is_open()) {
         outputFile << '{';
         for(auto it = charFreq.begin(); it != charFreq.end(); it++) {
@@ -74,27 +92,42 @@ void writeHeader(string destFile, const unordered_map<char, unsigned int>& charF
             }
         }   
         outputFile << '}';
+        outputFile.flush();
         outputFile.close();
     }
 }   
 
-void compress(string source, string dest) {
-    // charFreq is a dictionary that maps each character to its frequency
-    unordered_map<char, unsigned int> charFreq;
-    buildFrequencyDict(source, charFreq);
+/*
+Write prefix codes corresponding to characters from source file to the destinaton file in bits.
+*/
+// void Huffman::writePrefixCodesToFile() {
+//     int curBit = 0;
+//     char byte = 0;
+//     string encodedData = "";
+//     for(char c: data) {
+//         string code = charToCode[c];
+//         encodedData += code;
+//     }
 
-    // nodes is the list of Node instances of all characters in the source file
-    vector<Node *> nodes;
-    for(auto it = charFreq.begin(); it != charFreq.end(); it++) {
-        nodes.push_back(new Node(it->first, it->second));
-    }
-    Node *root = huffman(nodes);
+//     for(char bit: encodedData) {
+//         if(bit == '1') {
+//             byte = byte | (1 << (8 - curBit - 1));
+//         }
+//         curBit++;
+//         if(curBit == 8) {
 
-    // charToCode is a dictionary that maps a character to its prefix code in the huffman tree.
-    unordered_map<char, string> charToCode;
-    buildCharToCode(root, "", charToCode);
+//         }
+//     }
+// }
 
-    writeHeader(dest, charFreq);
+void Huffman::compress() {
+    readFile();
+    buildFrequencyDict();
+    buildHuffmanTree();
+    buildCharToCode(root, "");
+
+    writeHeaderToFile();
+    // writePrefixCodesToFile();
 }
 
 void decompress() {
@@ -111,6 +144,7 @@ int main(int argc, char *argv[]) {
     
     if(flag == "-c") {
         string source = argv[2], dest = argv[3];
-        compress(source, dest);
+        Huffman *huffman = new Huffman(source, dest);
+        huffman->compress();
     }
 }
