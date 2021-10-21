@@ -1,3 +1,11 @@
+/*
+Class: CS 271, Fall 2021
+Professor: Jessen Havill
+Name: Tung Luu, Uyen Le
+Date: October 21, 2021
+Purpose: Answers to project 4
+*/
+
 #include<iostream>
 #include<vector>
 #include<fstream>
