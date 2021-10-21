@@ -13,6 +13,8 @@ void Huffman::readFile() {
         stringstream ss;
         ss << inputFile.rdbuf();
         data = ss.str();
+        // Append pseudoEOF character to our string data to handle padding
+        data += pseudoEOF;
         inputFile.close();
     }
 }
@@ -28,7 +30,6 @@ void Huffman::buildFrequencyDict() {
         }
         charFreq[c]++;
     }
-    charFreq[pseudoEOF] = 1;
 }   
 
 /*
@@ -63,6 +64,8 @@ void Huffman::buildHuffmanTree() {
 Build a dictionary that maps each character to its prefix code in the huffman tree.
 */
 void Huffman::buildCharToCode(Node *node, string code) {
+    if(node == nullptr) return;
+    
     // This is a leaf
     if(node->left == nullptr && node->right == nullptr) {
         charToCode[node->data] = code;
