@@ -22,6 +22,7 @@ class Huffman {
         }
 
         void compress();
+        void decompress();
 
     private:
         string source, dest;  // The source and destination files
@@ -37,4 +38,6 @@ class Huffman {
         void buildCharToCode(Node *node, string code);
         void writeHeaderToFile();
         void writePrefixCodesToFile();
+
+        void writeDecodedCharacters();
 };

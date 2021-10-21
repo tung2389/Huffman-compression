@@ -136,21 +136,70 @@ void Huffman::compress() {
     writePrefixCodesToFile();
 }
 
-void decompress() {
+void Huffman::writeDecodedCharacters() {
+    ofstream outputFile(dest);
+    Node *curNode = root;
 
+    int curBit = 0;
+    for(char c : data) {
+        // We have reach a leave and successfully decode a character
+        if(curNode->left == nullptr && curNode->right == nullptr) {
+            if(curNode->data != pseudoEOF) {
+                outputFile << curNode->data;
+            } 
+            // We have reach the pseudoEOF character, stop reading
+            else {
+                break;
+            }
+            curNode = root;
+        }
+
+        bool bit = c & (1 << (8 - curBit - 1));
+        if(bit) {
+            curNode = curNode->right;
+        }
+        else {
+            curNode = curNode->left;
+        }
+
+        curBit++;
+        if(curBit == 8) {
+            curBit = 0;
+        }
+    }
+
+    outputFile.flush();
+    outputFile.close();
+}
+
+void Huffman::decompress() {
+    /*
+    readFile();
+    parseHeader();
+    buildHuffmanTree();
+    writeDecodedCharacters();
+    */
 }
 
 int main(int argc, char *argv[]) {
     if(argc != 4) {
-        cout << "Incorrect format" << endl;
+        cout << "Incorrect command's format" << endl;
         return 0;
     }
 
     string flag = argv[1];
-    
+    string source = argv[2], dest = argv[3];
+
     if(flag == "-c") {
-        string source = argv[2], dest = argv[3];
         Huffman *huffman = new Huffman(source, dest);
         huffman->compress();
+    }
+    else if(flag == "-d") {
+        Huffman *huffman = new Huffman(source, dest);
+        huffman->decompress();
+    }
+    else {
+        cout << "Incorrect command's format" << endl;
+        return 0;
     }
 }
