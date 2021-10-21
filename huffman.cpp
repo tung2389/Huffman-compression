@@ -1,7 +1,6 @@
 #include<iostream>
 #include<vector>
 #include<fstream>
-#include<unordered_map>
 #include"huffman.h"
 using namespace std;
 
@@ -86,7 +85,9 @@ void Huffman::writeHeaderToFile() {
         outputFile << '{';
         for(auto it = charFreq.begin(); it != charFreq.end(); it++) {
             outputFile << it->first << it->second;
-            if(it != charFreq.end()) {
+            // A temp pointer to check if we have reach the last entry of the dictionary.
+            auto tempIt = it;
+            if((++tempIt) != charFreq.end()) {
                 outputFile << ',';
             }
         }   
@@ -119,52 +120,85 @@ void Huffman::writePrefixCodesToFile() {
         if(curBit == 8) {
             curBit = 0;
             outputFile << byte;
+            byte = 0;
         }
+    }
+
+    // Padding last bits in the last byte with 0 and write the last byte
+    if(curBit < 8) {
+        outputFile << byte;
     }
 
     outputFile.flush();
     outputFile.close();
 }
 
+/*
+Compress the source file and write the compressed data to the destination file
+*/
 void Huffman::compress() {
     readFile();
     buildFrequencyDict();
     buildHuffmanTree();
     buildCharToCode(root, "");
-
     writeHeaderToFile();
     writePrefixCodesToFile();
 }
 
+/*
+Extract the header of a compressed file from string data of Huffman class, and parse this header to create charFreq dictionary.
+*/
+void Huffman::parseHeader() {
+    int idx = 1;
+    // Iterate until we reach the end of the header
+    while(!(data[idx] == '}' && data[idx - 1] != ',')) {
+        char c = data[idx];
+        string freq = "";
+        idx++;
+        while(data[idx] != ',' && data[idx] != '}') {
+            freq.push_back(data[idx]);
+            idx++;
+        }
+        charFreq[c] = (unsigned int)stoul(freq);
+        if(data[idx] == ',') {
+            idx++;
+        }
+    }
+    // Remove the header from the string data of Huffman class, leaving only real data
+    data = data.substr(idx + 1, string::npos);
+}
+
+/*
+Traverse over the string data (which is the content of the source file) 
+and write the character that corresponds to each prefix code in the source file to the destination file.
+*/
 void Huffman::writeDecodedCharacters() {
     ofstream outputFile(dest);
     Node *curNode = root;
 
-    int curBit = 0;
     for(char c : data) {
-        // We have reach a leave and successfully decode a character
-        if(curNode->left == nullptr && curNode->right == nullptr) {
-            if(curNode->data != pseudoEOF) {
-                outputFile << curNode->data;
-            } 
-            // We have reach the pseudoEOF character, stop reading
-            else {
-                break;
+        int curBit = 0;
+
+        for(int curBit = 0; curBit < 8; curBit++) {
+            // We have reach a leave and successfully decode a character
+            if(curNode->left == nullptr && curNode->right == nullptr) {
+                if(curNode->data != pseudoEOF) {
+                    outputFile << curNode->data;
+                } 
+                // We have reach the pseudoEOF character, stop reading
+                else {
+                    break;
+                }
+                curNode = root;
             }
-            curNode = root;
-        }
 
-        bool bit = c & (1 << (8 - curBit - 1));
-        if(bit) {
-            curNode = curNode->right;
-        }
-        else {
-            curNode = curNode->left;
-        }
-
-        curBit++;
-        if(curBit == 8) {
-            curBit = 0;
+            bool bit = c & (1 << (8 - curBit - 1));
+            if(bit) {
+                curNode = curNode->right;
+            }
+            else {
+                curNode = curNode->left;
+            }
         }
     }
 
@@ -173,12 +207,11 @@ void Huffman::writeDecodedCharacters() {
 }
 
 void Huffman::decompress() {
-    /*
     readFile();
     parseHeader();
     buildHuffmanTree();
+    buildCharToCode(root, "");
     writeDecodedCharacters();
-    */
 }
 
 int main(int argc, char *argv[]) {
